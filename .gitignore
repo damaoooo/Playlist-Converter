@@ -1,0 +1,11 @@
+*.json
+src/Netease/music_id
+src/Apple/test.py
+src/Apple/test2.py
+*.back
+
+# Any folder __pycache__ will be ignored
+__pycache__/
+
+# Any file ending in .pyc will be ignored
+*.pyc

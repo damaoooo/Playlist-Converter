@@ -1,49 +1,39 @@
+from datetime import datetime
+from typing import List
+
+from colorama import Fore, init
+from prettytable import PrettyTable
 from pyncm import apis
 from pyncm.apis import login
-import json
-from colorama import Fore, init
-from dataclasses import dataclass, field
-from typing import List
-from datetime import datetime
-from prettytable import PrettyTable
+
+from .netease_utils import NeteasePlaylist, NeteaseSong
 
 # Initialize colorama
 init()
 
-def print_json(json_str: str):
-    print(json.dumps(json_str, indent=4, ensure_ascii=False))
-    # save to ./test.json
-    with open("test.json", "w", encoding="utf-8") as f:
-        f.write(json.dumps(json_str, indent=4, ensure_ascii=False))
 
-@dataclass
-class Song:
-    id: int
-    name: str
-    artists: list
-    album: str
-
-@dataclass
-class PlayList:
-    name: str
-    id: int
-    creator_id: int
-    create_time: int
-    songs: List[Song] = field(default_factory=list)
-
-    def print_playlist(self):
-        create_time_human_readable = datetime.fromtimestamp(self.create_time).strftime('%Y-%m-%d %H:%M:%S')
-        print(f"ID: {self.id}, Name: {self.name}, Create Time: {create_time_human_readable}")
-
-class User:
+class NeteaseMusic:
     def __init__(self):
         self.uid = 0
         self.nickname = ""
 
-        self.created_playlists: List[PlayList] = []
-        self.subscribed_playlists: List[PlayList] = []
+        self.created_playlists: List[NeteasePlaylist] = []
+        self.subscribed_playlists: List[NeteasePlaylist] = []
     
-    def login(self, music_u: str):
+    def login(self, music_id_or_path: str):
+
+        # if music_id_or_path is a path
+        if music_id_or_path.endswith("music_id"):
+            with open(music_id_or_path, "r") as f:
+                music_id = f.read().strip()
+        else:
+            music_id = music_id_or_path
+
+            with open("./music_id", "w") as f:
+                # Save music_id to ./music_id
+                f.write(music_id)
+
+        music_u = music_id
         res = login.LoginViaCookie(MUSIC_U=music_u)
         if res['code'] == 200:
             print(Fore.GREEN + "login success" + Fore.RESET)
@@ -56,7 +46,7 @@ class User:
     def get_playlist(self):
         playlists = apis.user.GetUserPlaylists(self.uid, limit=1000)
         for playlist in playlists['playlist']:
-            playlist_obj: PlayList = PlayList(name=playlist['name'],
+            playlist_obj: NeteasePlaylist = NeteasePlaylist(name=playlist['name'],
                                                 id=playlist['id'],
                                                 creator_id=playlist['userId'],
                                                 create_time=playlist['createTime'])
@@ -65,19 +55,19 @@ class User:
             else:
                 self.subscribed_playlists.append(playlist_obj)
 
-    def get_songs(self, playlist: PlayList):
+    def get_songs(self, playlist: NeteasePlaylist):
         if playlist.songs:
             return
         
         songs = apis.playlist.GetPlaylistInfo(playlist.id)
         for song in songs['playlist']['tracks']:
-            song_obj = Song(id=song['id'],
+            song_obj = NeteaseSong(id=song['id'],
                             name=song['name'],
                             artists=[artist['name'] for artist in song['ar']],
                             album=song['al']['name'])
             playlist.songs.append(song_obj)
     
-    def show_songs(self, songs: List[Song]):
+    def show_songs(self, songs: List[NeteaseSong]):
         table = PrettyTable()
         table.field_names = ["#", "ID", "Name", "Artists", "Album"]
 
@@ -86,7 +76,7 @@ class User:
         
         print(table)
 
-    def show_playlists(self, playlists: List[PlayList]):
+    def show_playlists(self, playlists: List[NeteasePlaylist]):
 
         table = PrettyTable()
         table.field_names = ["#", "ID", "Name", "Create Time"]
@@ -97,21 +87,3 @@ class User:
 
         print(table)
 
-        
-with open("./music_id", "r") as f:
-    music_id = f.read().strip()
-
-def login_page():
-    # print("login method:")
-    my_music_u = music_id
-    user = User()
-    user.login(my_music_u)
-    user.get_playlist()
-    user.show_playlists(user.created_playlists)
-    user.get_songs(user.created_playlists[16])
-    user.show_songs(user.created_playlists[16].songs)
-    
-
-
-if __name__ == "__main__":
-    login_page()
