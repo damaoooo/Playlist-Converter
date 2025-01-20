@@ -1,4 +1,5 @@
 import re
+import os
 import json
 
 from dataclasses import dataclass, field
@@ -25,9 +26,10 @@ def contains_korean(text):
     return bool(korean_pattern.search(text))
 
 def print_json(json_str: str):
+    pwd = os.getcwd()
     print(json.dumps(json_str, indent=4, ensure_ascii=False))
-    # save to ./test.json
-    with open("test.json", "w", encoding="utf-8") as f:
+    # 保存到当前目录下的test.json文件
+    with open(os.path.join(pwd, "test.json"), "w", encoding="utf-8") as f:
         f.write(json.dumps(json_str, indent=4, ensure_ascii=False))
 
 

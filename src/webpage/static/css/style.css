@@ -1,0 +1,356 @@
+:root {
+    --primary-color: #409EFF;
+    --background-color: #f5f7fa;
+    --text-color: #2c3e50;
+    --border-radius: 12px;
+    --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Noto Sans SC', sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+    font-size: 2.5em;
+    margin-bottom: 40px;
+    color: var(--text-color);
+    font-weight: 700;
+    position: relative;
+}
+
+h1::after {
+    content: '';
+    display: block;
+    width: 60px;
+    height: 4px;
+    background: var(--primary-color);
+    margin: 10px auto;
+    border-radius: 2px;
+}
+
+.token-form {
+    background: white;
+    padding: 30px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    margin-bottom: 30px;
+    transition: transform 0.3s ease;
+}
+
+.token-form:hover {
+    transform: translateY(-5px);
+}
+
+.token-input {
+    font-family: monospace;
+    min-height: 100px;
+    resize: vertical;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.token-input:focus {
+    box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+}
+
+.playlist-list {
+    background: white;
+    padding: 30px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    margin-bottom: 30px;
+}
+
+.conversion-status {
+    margin: 20px 0;
+    padding: 20px;
+    background: #f5f7fa;
+    border-radius: 8px;
+}
+
+.song-info {
+    background: var(--background-color);
+    padding: 20px;
+    border-radius: var(--border-radius);
+    margin: 20px 0;
+    border-left: 4px solid var(--primary-color);
+}
+
+.manual-selection {
+    padding: 20px;
+}
+
+.original-song-info {
+    background: var(--background-color);
+    padding: 20px;
+    border-radius: var(--border-radius);
+    margin-bottom: 20px;
+}
+
+.action-buttons {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+.playlist-selection {
+    background: var(--background-color);
+    padding: 25px;
+    border-radius: var(--border-radius);
+    margin: 20px 0;
+}
+
+.playlist-selection-title {
+    font-size: 1.2em;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: var(--text-color);
+}
+
+/* Element Plus 组件样式覆盖 */
+.el-table {
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--box-shadow);
+}
+
+.el-table th {
+    background-color: #f5f7fa !important;
+    font-weight: 600;
+}
+
+.el-button {
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.el-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(64, 158, 255, 0.2);
+}
+
+.el-progress-bar__outer {
+    border-radius: 8px !important;
+}
+
+.el-progress-bar__inner {
+    border-radius: 8px !important;
+    transition: width 0.3s ease-in-out;
+}
+
+.el-dialog {
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+
+.el-dialog__header {
+    padding: 20px 25px;
+    margin: 0;
+    border-bottom: 1px solid #eee;
+}
+
+.el-dialog__body {
+    padding: 25px;
+}
+
+.el-result {
+    padding: 40px 0;
+}
+
+.el-result__icon {
+    font-size: 64px;
+}
+
+.el-result__title {
+    font-size: 24px;
+    margin-top: 20px;
+}
+
+.el-result__subtitle {
+    margin-top: 10px;
+    color: #666;
+}
+
+/* 动画效果 */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+        margin: 20px auto;
+    }
+
+    h1 {
+        font-size: 2em;
+    }
+
+    .token-form, .playlist-list, .conversion-status {
+        padding: 20px;
+    }
+}
+
+.current-song {
+    margin: 20px 0;
+    padding: 15px;
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.current-song h3 {
+    margin: 0 0 10px 0;
+    color: #409eff;
+}
+
+.current-song p {
+    margin: 5px 0;
+    color: #606266;
+}
+
+.original-song {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f5f7fa;
+    border-radius: 6px;
+}
+
+.original-song h4 {
+    margin: 0 0 10px 0;
+    color: #409eff;
+}
+
+.original-song p {
+    margin: 5px 0;
+    color: #606266;
+}
+
+.matches {
+    margin: 20px 0;
+}
+
+.matches h4 {
+    margin: 0 0 15px 0;
+    color: #409eff;
+}
+
+.manual-selection-actions {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.manual-search {
+    padding: 20px;
+}
+
+.playlist-selection {
+    padding: 20px;
+}
+
+.playlist-selection .el-radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.completion-status {
+    background: white;
+    padding: 30px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    margin-top: 20px;
+}
+
+.conversion-details {
+    margin-top: 30px;
+}
+
+.el-tabs--border-card {
+    box-shadow: var(--box-shadow) !important;
+    border: none !important;
+}
+
+.el-tabs__header {
+    background-color: #f5f7fa !important;
+    border-bottom: 1px solid #e4e7ed !important;
+}
+
+.el-tabs__item {
+    font-size: 16px !important;
+    padding: 15px 30px !important;
+}
+
+.el-tabs__item.is-active {
+    color: var(--primary-color) !important;
+    font-weight: 600;
+}
+
+.el-table {
+    --el-table-border-color: #e4e7ed;
+    --el-table-header-bg-color: #f5f7fa;
+    --el-table-row-hover-bg-color: #f5f7fa;
+}
+
+.el-table th {
+    font-weight: 600 !important;
+    color: #606266 !important;
+    background-color: #f5f7fa !important;
+}
+
+.el-table__body tr:hover > td {
+    background-color: #f5f7fa !important;
+}
+
+.result-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+.restart-button-container {
+    text-align: center;
+    margin-top: 30px;
+    padding: 20px 0;
+}
+
+.restart-button-container .el-button {
+    padding: 15px 40px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+.restart-button-container .el-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+} 

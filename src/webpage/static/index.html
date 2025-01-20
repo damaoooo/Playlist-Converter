@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>播放列表转换器</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+    <div id="app" class="container">
+        <!-- 主页面 -->
+        <div v-if="!isCompleted">
+            <h1>网易云音乐 → Apple Music</h1>
+            
+            <login-form
+                :is-logged-in="isLoggedIn"
+                :is-loading="isLoading"
+                :form="form"
+                @login="login">
+            </login-form>
+
+            <playlist-list
+                :is-logged-in="isLoggedIn"
+                :is-converting="isConverting"
+                :playlists="playlists"
+                :apple-music-playlists="appleMusicPlaylists"
+                @convert-playlist="convertPlaylist"
+                @fetch-apple-playlists="fetchApplePlaylists"
+                ref="playlistList">
+            </playlist-list>
+
+            <conversion-status
+                :is-converting="isConverting"
+                :conversion-progress="conversionProgress"
+                :current-song="currentSong"
+                :playlist-selection="playlistSelection"
+                :manual-selection="manualSelection"
+                :manual-search-visible="manualSearchVisible"
+                :search-keyword="searchKeyword"
+                :search-results="searchResults"
+                @select-song="selectSong"
+                @skip-song="skipSong"
+                @show-manual-search="showManualSearch"
+                @perform-manual-search="performManualSearch"
+                @select-search-result="selectSearchResult"
+                @update:manual-search-visible="manualSearchVisible = $event"
+                @update:search-keyword="searchKeyword = $event">
+            </conversion-status>
+        </div>
+
+        <!-- 结果页面 -->
+        <div v-else class="result-page">
+            <completion-status
+                :is-completed="isCompleted"
+                :success-songs="successSongs"
+                :failed-songs="failedSongs"
+                :skipped-songs="skippedSongs">
+            </completion-status>
+
+            <div class="restart-button-container" style="text-align: center; margin-top: 20px;">
+                <el-button type="primary" size="large" @click="restartConversion">
+                    重新开始
+                </el-button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 基础库 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script src="https://unpkg.com/element-plus"></script>
+    <script src="https://unpkg.com/@element-plus/icons-vue"></script>
+    
+    <!-- 创建 Vue 应用实例 -->
+    <script>
+        const { createApp, ref, reactive } = Vue
+        const { ElMessage } = ElementPlus
+        const app = createApp({
+            setup() {
+                const form = reactive({
+                    neteaseToken: '',
+                    appleToken: ''
+                })
+                const isLoading = ref(false)
+                const isLoggedIn = ref(false)
+                const isConverting = ref(false)
+                const isCompleted = ref(false)
+                const playlists = ref([])
+                const conversionProgress = ref(0)
+                const currentSong = ref(null)
+                const manualSelection = ref(null)
+                const playlistSelection = ref(null)
+                const successSongs = ref([])
+                const failedSongs = ref([])
+                const skippedSongs = ref([])
+                const ws = ref(null)
+                const sessionId = ref(null)
+                const manualSearchVisible = ref(false)
+                const searchKeyword = ref('')
+                const searchResults = ref([])
+                const conversionResults = ref([])
+                const appleMusicPlaylists = ref([])
+
+                const login = async () => {
+                    if (isLoading.value) return
+                    isLoading.value = true
+                    
+                    try {
+                        const cleanedForm = {
+                            neteaseToken: form.neteaseToken.trim(),
+                            appleToken: form.appleToken.trim().replace(/[\r\n]+/g, '')
+                        }
+
+                        const response = await fetch('/api/login', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(cleanedForm)
+                        })
+                        
+                        if (!response.ok) {
+                            const error = await response.json()
+                            throw new Error(error.detail || '登录失败')
+                        }
+                        
+                        const data = await response.json()
+                        sessionId.value = data.session_id
+                        playlists.value = data.playlists
+                        isLoggedIn.value = true
+                        setupWebSocket()
+                    } catch (error) {
+                        ElMessage.error(error.message)
+                    } finally {
+                        isLoading.value = false
+                    }
+                }
+
+                const setupWebSocket = () => {
+                    ws.value = new WebSocket(`ws://${window.location.host}/ws/${sessionId.value}`)
+                    ws.value.onmessage = (event) => {
+                        const data = JSON.parse(event.data)
+                        handleWebSocketMessage(data)
+                    }
+                    ws.value.onclose = () => {
+                        setTimeout(setupWebSocket, 1000)
+                    }
+                }
+
+                const handleWebSocketMessage = (data) => {
+                    switch (data.type) {
+                        case 'progress':
+                            conversionProgress.value = data.progress
+                            currentSong.value = data.current_song
+                            if (data.result) {
+                                conversionResults.value.push({
+                                    status: data.result.status,
+                                    originalName: currentSong.value.name,
+                                    originalArtist: currentSong.value.artist,
+                                    name: currentSong.value.name,
+                                    artist: currentSong.value.artist,
+                                    album: currentSong.value.album,
+                                    matchedName: data.result.matched_song?.name,
+                                    matchedArtist: data.result.matched_song?.artist,
+                                    matchedAlbum: data.result.matched_song?.album,
+                                    reason: data.result.reason
+                                })
+                            }
+                            break
+                        case 'playlist_selection':
+                            playlistSelection.value = data
+                            break
+                        case 'manual_selection':
+                            manualSelection.value = data
+                            break
+                        case 'completed':
+                            isConverting.value = false
+                            isCompleted.value = true
+                            successSongs.value = data.successSongs
+                            failedSongs.value = data.failedSongs
+                            skippedSongs.value = data.skippedSongs
+                            break
+                    }
+                }
+
+                const convertPlaylist = async (playlist) => {
+                    if (isConverting.value) return
+                    
+                    conversionProgress.value = 0
+                    currentSong.value = null
+                    manualSelection.value = null
+                    playlistSelection.value = null
+                    conversionResults.value = []
+                    
+                    isConverting.value = true
+                    try {
+                        const response = await fetch('/api/convert_playlist', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                session_id: sessionId.value,
+                                playlist_id: playlist.id,
+                                playlist_name: playlist.name,
+                                target_playlist_id: playlist.target_playlist_id,
+                                target_playlist_name: playlist.target_playlist_name,
+                                mode: playlist.mode
+                            })
+                        })
+                        
+                        if (!response.ok) {
+                            const error = await response.json()
+                            throw new Error(error.detail || '转换失败')
+                        }
+
+                        const data = await response.json()
+                        if (data.error) {
+                            throw new Error(data.error)
+                        }
+                    } catch (error) {
+                        ElMessage.error(error.message)
+                        isConverting.value = false
+                        // 重置其他状态
+                        conversionProgress.value = 0
+                        currentSong.value = null
+                        manualSelection.value = null
+                        playlistSelection.value = null
+                    }
+                }
+
+                const selectSong = async (song) => {
+                    try {
+                        const response = await fetch('/api/select_song', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ 
+                                song_id: song.id,
+                                session_id: sessionId.value
+                            })
+                        })
+                        
+                        if (!response.ok) {
+                            const error = await response.json()
+                            throw new Error(error.detail || '选择失败')
+                        }
+                        
+                        manualSelection.value = null
+                    } catch (error) {
+                        ElMessage.error(error.message)
+                    }
+                }
+
+                const skipSong = async () => {
+                    try {
+                        const response = await fetch('/api/skip_song', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ 
+                                session_id: sessionId.value
+                            })
+                        })
+                        
+                        if (!response.ok) {
+                            const error = await response.json()
+                            throw new Error(error.detail || '跳过失败')
+                        }
+                        
+                        manualSelection.value = null
+                    } catch (error) {
+                        ElMessage.error(error.message)
+                    }
+                }
+
+                const showManualSearch = () => {
+                    manualSearchVisible.value = true
+                    searchKeyword.value = ''
+                    searchResults.value = []
+                }
+
+                const performManualSearch = async (keyword) => {
+                    try {
+                        const response = await fetch('/api/manual_search', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                keyword: keyword,
+                                session_id: sessionId.value
+                            })
+                        })
+
+                        if (!response.ok) {
+                            const error = await response.json()
+                            throw new Error(error.detail || '搜索失败')
+                        }
+
+                        const data = await response.json()
+                        searchResults.value = data.matches
+                    } catch (error) {
+                        ElMessage.error(error.message)
+                    }
+                }
+
+                const selectSearchResult = async (song) => {
+                    await selectSong(song)
+                    manualSearchVisible.value = false
+                }
+
+                const restartConversion = () => {
+                    // 只重置转换相关状态
+                    isConverting.value = false
+                    isCompleted.value = false
+                    conversionProgress.value = 0
+                    currentSong.value = null
+                    manualSelection.value = null
+                    playlistSelection.value = null
+                    manualSearchVisible.value = false
+                    searchKeyword.value = ''
+                    searchResults.value = []
+                    conversionResults.value = []
+                    
+                    successSongs.value = []
+                    failedSongs.value = []
+                    skippedSongs.value = []
+                    // 不重置登录状态和表单数据
+                    // isLoggedIn.value = false
+                    // sessionId.value = null
+                    // form.neteaseToken = ''
+                    // form.appleToken = ''
+                }
+
+                const fetchApplePlaylists = async () => {
+                    try {
+                        const response = await fetch(`/api/apple-playlists/${sessionId.value}`);
+                        if (!response.ok) {
+                            throw new Error('获取 Apple Music 歌单列表失败');
+                        }
+                        const data = await response.json();
+                        appleMusicPlaylists.value = data.playlists;
+                        // 这里需要更新 playlist-list 组件的 applePlaylists 属性
+                        // 假设你有一个方法来更新这个属性
+                    } catch (error) {
+                        ElMessage.error(error.message);
+                    }
+                }
+
+                return {
+                    form,
+                    isLoading,
+                    isLoggedIn,
+                    isConverting,
+                    isCompleted,
+                    playlists,
+                    conversionProgress,
+                    currentSong,
+                    manualSelection,
+                    playlistSelection,
+                    manualSearchVisible,
+                    searchKeyword,
+                    searchResults,
+                    conversionResults,
+                    appleMusicPlaylists,
+                    successSongs,
+                    failedSongs,
+                    skippedSongs,
+                    login,
+                    convertPlaylist,
+                    selectSong,
+                    skipSong,
+                    showManualSearch,
+                    performManualSearch,
+                    selectSearchResult,
+                    restartConversion,
+                    fetchApplePlaylists
+                }
+            }
+        })
+        
+        app.use(ElementPlus)
+    </script>
+
+    <!-- 加载组件 -->
+    <script src="static/components/login-form.js"></script>
+    <script src="static/components/playlist-list.js"></script>
+    <script src="static/components/conversion-status.js"></script>
+    <script src="static/components/completion-status.js"></script>
+
+    <!-- 最后挂载应用 -->
+    <script>
+        app.mount('#app')
+    </script>
+</body>
+</html> 

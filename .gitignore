@@ -9,3 +9,8 @@ __pycache__/
 
 # Any file ending in .pyc will be ignored
 *.pyc
+
+.env
+
+*.log
+test.*

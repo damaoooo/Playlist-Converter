@@ -58,7 +58,7 @@ class TestNeteaseMusic(unittest.TestCase):
         }
         netease = NeteaseMusic()
         netease.uid = 12345
-        netease.get_playlist()
+        netease.retrive_playlists()
         self.assertEqual(len(netease.created_playlists), 1)
         self.assertEqual(len(netease.subscribed_playlists), 1)
 

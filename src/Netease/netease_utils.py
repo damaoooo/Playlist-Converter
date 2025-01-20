@@ -13,7 +13,7 @@ def print_json(json_str: str):
 class NeteaseSong:
     id: int
     name: str
-    artists: list
+    artists: list[str]
     album: str
 
 @dataclass

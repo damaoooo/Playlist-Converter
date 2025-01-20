@@ -25,7 +25,7 @@ class TestAppleMusic(unittest.TestCase):
         mock_get.return_value.status_code = 200
         mock_get.return_value.json.return_value = {"data": []}
         apple_music = AppleMusic("user_token", "dev_token")
-        response = apple_music.get_playlists()
+        response = apple_music.retrive_playlists()
         self.assertIsNone(response)
         mock_get.assert_called_once_with("https://api.music.apple.com/v1/me/library/playlists", headers=apple_music.header_with_user)
 
@@ -33,7 +33,7 @@ class TestAppleMusic(unittest.TestCase):
     def test_get_playlists_failure(self, mock_get):
         mock_get.return_value.status_code = 401
         apple_music = AppleMusic("user_token", "dev_token")
-        response = apple_music.get_playlists()
+        response = apple_music.retrive_playlists()
         self.assertIsNone(response)
         mock_get.assert_called_once_with("https://api.music.apple.com/v1/me/library/playlists", headers=apple_music.header_with_user)
 

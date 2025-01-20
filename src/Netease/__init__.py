@@ -1,5 +1,5 @@
 from .netease import NeteaseMusic, NeteasePlaylist, NeteaseSong
-from pyncm import apis
-from pyncm.apis import login
+from pyncm_async import apis
+from pyncm_async.apis import login
 
 __all__ = ["NeteaseMusic", "NeteasePlaylist", "NeteaseSong", "apis", "login"]
