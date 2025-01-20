@@ -42,8 +42,8 @@ app.component('login-form', {
     },
     data() {
         return {
-            defaultNeteaseToken: process.env.VUE_APP_DEFAULT_NETEASE_TOKEN || '',
-            defaultAppleToken: process.env.VUE_APP_DEFAULT_APPLE_TOKEN || ''
+            defaultNeteaseToken:  '',
+            defaultAppleToken:  ''
         }
     },
     emits: ['login'],
